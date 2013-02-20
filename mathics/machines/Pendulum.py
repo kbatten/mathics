@@ -279,7 +279,14 @@ class Pendulum(Machine):
 
     def visualization_basic(self, vp):
         vp.add_line(self.pivot, self._weight, Viewport.SOLID, 0.01, Viewport.BLACK)
-        vp.add_circle(self.pivot, Viewport.SOLID, 0.1, Viewport.BLACK)
+
+        # todo: should be able to chain these
+        topleft = Point().from_point(self.pivot)
+        bottomright = Point().from_point(self.pivot)
+        topleft.do_translate(Point(-0.1,0.1))
+        bottomright.do_translate(Point(0.1,0))
+        vp.add_rectangle(topleft, bottomright, Viewport.SOLID, 0.1, Viewport.BLACK)
+
         vp.add_circle(self._weight, Viewport.SOLID, 0.05, Viewport.BLACK)
 
 
