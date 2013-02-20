@@ -227,14 +227,47 @@ class Viewport(object):
         def __str__(self):
             return "Viewport.Line: (%s start %s end)" % (self.get_start(), self.get_end())
 
+    class Text(object):
+        def __init__(self, point, text, color):
+            if hasattr(point, '__call__'):
+                self.get_point = point
+            else:
+                self.point = point
+            if hasattr(text, '__call__'):
+                self.get_text = text
+            else:
+                self.text = text
+            self.color = color
+
+        def get_point(self):
+            return self.point
+
+        def get_text(self):
+            return self.text
+
+        def draw(self, draw, shift_x, shift_y, scale_x, scale_y, shift_x_internal, shift_y_internal):
+            point = self.get_point()
+            text = self.get_text()
+
+            x = (point.x + shift_x_internal) * scale_x + shift_x
+            y = (point.y + shift_y_internal) * scale_y + shift_y
+
+            draw.text((x, y), text, fill=self.color)
+
+        def __str__(self):
+            return "Viewport.Line: (%s start %s end)" % (self.get_start(), self.get_end())
+
     def add_circle(self, center, styles, radius, color):
         self.objects.append(Viewport.Circle(center, styles, radius, color))
 
     def add_rectangle(self, topleft, bottomright, styles, radius, color):
         self.objects.append(Viewport.Rectangle(topleft, bottomright, styles, color))
 
-    def add_line(self, start, end, styles, radius, color):
-        self.objects.append(Viewport.Line(start, end, styles, radius, color))
+    def add_line(self, start, end, styles, width, color):
+        self.objects.append(Viewport.Line(start, end, styles, width, color))
+
+    def add_text(self, point, text, color):
+        self.objects.append(Viewport.Text(point, text, color))
 
     def add_axis(self, color=GRAY):
         self.add_line(Point(0,self.y1_internal), Point(0,self.y2_internal), Viewport.SOLID, 0, color)
@@ -289,6 +322,38 @@ class Pendulum(Machine):
 
         vp.add_circle(self._weight, Viewport.SOLID, 0.05, Viewport.BLACK)
 
+    def _time_velocity(self):
+        curtime = self.t
+        x = self.t
+
+        self.set_time(curtime-0.1)
+        oldweight = Vector().from_vector(self.weight)
+        self.set_time(curtime)
+        y = Vector(self.weight.x - oldweight.x, self.weight.y - oldweight.y).r()
+        return Point(x, y)
+
+    def visualization_different(self, vp):
+        vp.add_circle(self._time_velocity, Viewport.SOLID, 0.05, Viewport.BLACK)
+
+
+class Timer(Machine):
+    def __init__(self, point):
+        super(Timer, self).__init__()
+
+        self.point = point
+
+    def __str__(self):
+        return "Timer: (%f time %s)" % (self.t, self.point)
+
+    def set_time(self, t):
+        super(Timer, self).set_time(t)
+
+    def _t(self):
+        return "%0.2f s" % self.t
+
+    def visualization_basic(self, vp):
+        vp.add_text(self.point, self._t, Viewport.BLACK)
+
 
 def serve_gif(frames, duration):
     from PIL import Image
@@ -334,22 +399,27 @@ if __name__ == '__main__':
 
     world = World(500, 600, Viewport.BEIGE)
 
-    viewport2 = Viewport(-20, 4, 20, -4, (0,200,0))
-    viewport = Viewport(-2, 2, 2, -2, (200,0,0))
+    viewport_different = Viewport(-4, 1.9, 8, -0.5, (0,200,0))
+    viewport = Viewport(-3, 3, 3, -3)#, (200,0,0))
 
-    world.add_viewport(viewport2, 0, 0, 500, 100)
+    world.add_viewport(viewport_different, 0, 0, 500, 100)
     world.add_viewport(viewport, 0, 100, 500, 600)
 
     seconds_pendulum = Pendulum(Point(0,1), Vector().from_polar((2/(2*math.pi)) * (2/(2*math.pi)) * scipy.constants.g, math.radians(320)))
     world.add_machine(seconds_pendulum)
-    seconds2_pendulum = Pendulum(Point(0,1), Vector().from_polar((4/(2*math.pi)) * (4/(2*math.pi)) * scipy.constants.g, math.radians(320)))
+    seconds2_pendulum = Pendulum(Point(0,2), Vector().from_polar((4/(2*math.pi)) * (4/(2*math.pi)) * scipy.constants.g, math.radians(320)))
     world.add_machine(seconds2_pendulum)
+
+    timer = Timer(Point(2,2))
+    world.add_machine(timer)
 
     viewport.add_axis()
     viewport.add_visualization(seconds_pendulum.visualization_basic)
+    viewport.add_visualization(seconds2_pendulum.visualization_basic)
+    viewport.add_visualization(timer.visualization_basic)
 
-    viewport2.add_axis((0,0,200))
-    viewport2.add_visualization(seconds2_pendulum.visualization_basic)
+    viewport_different.add_visualization(seconds_pendulum.visualization_different)
+    viewport_different.add_visualization(seconds2_pendulum.visualization_different)
 
     frames = []
 
@@ -364,11 +434,12 @@ if __name__ == '__main__':
 
         frame = None
         for i in reversed(range(blur)):
-            world.set_time(t - (i * step/blur))
-            if not frame:
-                frame = world.get_frame()
-            else:
-                frame = Image.blend(frame, world.get_frame(), 0.4)
+            if t - (i * step/blur) >= 0:
+                world.set_time(t - (i * step/blur))
+                if not frame:
+                    frame = world.get_frame()
+                else:
+                    frame = Image.blend(frame, world.get_frame(), 0.4)
 
         frames.append(frame)
     timer_end = time.time()
