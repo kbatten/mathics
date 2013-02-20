@@ -334,7 +334,7 @@ if __name__ == '__main__':
 
     world = World(500, 600, Viewport.BEIGE)
 
-    viewport2 = Viewport(-2, 2, 2, -2, (0,200,0))
+    viewport2 = Viewport(-10, 2, 10, -2, (0,200,0))
     viewport = Viewport(-2, 2, 2, -2)
 
     world.add_viewport(viewport2, 0, 0, 500, 100)
