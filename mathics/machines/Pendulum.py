@@ -310,6 +310,17 @@ class Pendulum(Machine):
         p.do_translate(self.weight)
         return p
 
+    def _weight_offset(self):
+        p = Point().from_point(self.pivot)
+        p.do_translate(self.weight)
+        p.do_translate(Point(-0.5, -0.2))
+        return p
+
+    def _weight_x_y(self):
+        p = Point().from_point(self.pivot)
+        p.do_translate(self.weight)
+        return "(%0.3f, %0.3f)" % (p.x, p.y)
+
     def visualization_basic(self, vp):
         vp.add_line(self.pivot, self._weight, Viewport.SOLID, 0.01, Viewport.BLACK)
 
@@ -321,6 +332,7 @@ class Pendulum(Machine):
         vp.add_rectangle(topleft, bottomright, Viewport.SOLID, 0.1, Viewport.BLACK)
 
         vp.add_circle(self._weight, Viewport.SOLID, 0.05, Viewport.BLACK)
+        vp.add_text(self._weight_offset, self._weight_x_y, (0,0,170))
 
     def _time_velocity(self):
         curtime = self.t
@@ -397,13 +409,13 @@ def serve_gif(frames, duration):
 if __name__ == '__main__':
     import sys
 
-    world = World(500, 600, Viewport.BEIGE)
+    world = World(500, 600, (255,0,0))
 
     viewport_different = Viewport(-4, 1.9, 8, -0.5, (0,200,0))
-    viewport = Viewport(-3, 3, 3, -3)#, (200,0,0))
+    viewport = Viewport(-3, 3, 3, -3, Viewport.BEIGE)
 
-    world.add_viewport(viewport_different, 0, 0, 500, 100)
     world.add_viewport(viewport, 0, 100, 500, 600)
+    world.add_viewport(viewport_different, 0, 0, 500, 100)
 
     seconds_pendulum = Pendulum(Point(0,1), Vector().from_polar((2/(2*math.pi)) * (2/(2*math.pi)) * scipy.constants.g, math.radians(320)))
     world.add_machine(seconds_pendulum)
