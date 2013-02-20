@@ -269,9 +269,37 @@ class Viewport(object):
     def add_text(self, point, text, color):
         self.objects.append(Viewport.Text(point, text, color))
 
-    def add_axis(self, color=GRAY):
+    def add_axis(self, smallhash=1, largehash=5, color=GRAY):
         self.add_line(Point(0,self.y1_internal), Point(0,self.y2_internal), Viewport.SOLID, 0, color)
         self.add_line(Point(self.x1_internal,0), Point(self.x2_internal,0), Viewport.SOLID, 0, color)
+
+        def frange(start, end, step):
+            distance = end - start
+            distance = step * math.floor(distance/step)
+            for i in range(1 + int(distance / step)):
+                yield start + i*step
+
+        y = smallhash/4.0
+        for x in frange(0, self.x1_internal, -smallhash):
+            self.add_line(Point(x,-y), Point(x,y), Viewport.SOLID, 0, color)
+        for x in frange(0, self.x2_internal, smallhash):
+            self.add_line(Point(x,-y), Point(x,y), Viewport.SOLID, 0, color)
+        x = smallhash/4.0
+        for y in frange(0, self.y1_internal, smallhash):
+            self.add_line(Point(-x,y), Point(x,y), Viewport.SOLID, 0, color)
+        for y in frange(0, self.y2_internal, -smallhash):
+            self.add_line(Point(-x,y), Point(x,y), Viewport.SOLID, 0, color)
+
+        y = smallhash/2.0
+        for x in frange(0, self.x1_internal, -largehash):
+            self.add_line(Point(x,-y), Point(x,y), Viewport.SOLID, 0, color)
+        for x in frange(0, self.x2_internal, largehash):
+            self.add_line(Point(x,-y), Point(x,y), Viewport.SOLID, 0, color)
+        x = smallhash/2.0
+        for y in frange(0, self.y1_internal, largehash):
+            self.add_line(Point(-x,y), Point(x,y), Viewport.SOLID, 0, color)
+        for y in frange(0, self.y2_internal, -largehash):
+            self.add_line(Point(-x,y), Point(x,y), Viewport.SOLID, 0, color)
 
     def add_visualization(self, visualization):
         visualization(self)
@@ -425,7 +453,7 @@ if __name__ == '__main__':
     timer = Timer(Point(2,2))
     world.add_machine(timer)
 
-    viewport.add_axis()
+    viewport.add_axis(0.2, 1)
     viewport.add_visualization(seconds_pendulum.visualization_basic)
     viewport.add_visualization(seconds2_pendulum.visualization_basic)
     viewport.add_visualization(timer.visualization_basic)
