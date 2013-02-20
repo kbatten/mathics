@@ -437,13 +437,16 @@ def serve_gif(frames, duration):
 if __name__ == '__main__':
     import sys
 
-    world = World(500, 600, (255,0,0))
+    x = 500
+    y = 6 * x / 5
+
+    world = World(x, y, (255,0,0))
 
     viewport_different = Viewport(-4, 1.9, 8, -0.5, (0,200,0))
     viewport = Viewport(-3, 3, 3, -3, Viewport.BEIGE)
 
-    world.add_viewport(viewport, 0, 100, 500, 600)
-    world.add_viewport(viewport_different, 0, 0, 500, 100)
+    world.add_viewport(viewport, 0, y/6, x, y)
+    world.add_viewport(viewport_different, 0, 0, x, y/6)
 
     seconds_pendulum = Pendulum(Point(0,1), Vector().from_polar((2/(2*math.pi)) * (2/(2*math.pi)) * scipy.constants.g, math.radians(320)))
     world.add_machine(seconds_pendulum)
