@@ -468,7 +468,9 @@ if __name__ == '__main__':
 
     step = 0.05
     duration = 4
-    blur = 5
+    fps = 60
+
+    blur = int(math.ceil(fps/(1.0/step)))
 
     timer_start = time.time()
     duration = step * math.ceil(duration/step)
@@ -486,6 +488,6 @@ if __name__ == '__main__':
 
         frames.append(frame)
     timer_end = time.time()
-    print "generated %i frames in %i seconds" % (len(frames) * blur, timer_end - timer_start)
+    print "generated %i frames in %i seconds. %f fps" % (len(frames) * blur, timer_end - timer_start, (len(frames)*blur)/duration)
 
     serve_gif(frames, duration)
