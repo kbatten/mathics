@@ -329,10 +329,11 @@ if __name__ == '__main__':
 
     world = World(500, 600, Viewport.BEIGE)
 
-    viewport = Viewport(-2, 2, 2, -2)
     viewport2 = Viewport(-2, 2, 2, -2, (0,200,0))
-    world.add_viewport(viewport, 0, 100, 499, 599)
-    world.add_viewport(viewport2, 0, 0, 499, 99)
+    viewport = Viewport(-2, 2, 2, -2)
+
+    world.add_viewport(viewport2, 0, 0, 500, 100)
+    world.add_viewport(viewport, 0, 100, 500, 600)
 
     seconds_pendulum = Pendulum(Point(0,1), Vector().from_polar(0.994, math.radians(320)))
     world.add_machine(seconds_pendulum)
