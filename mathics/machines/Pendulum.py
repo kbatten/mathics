@@ -334,25 +334,27 @@ if __name__ == '__main__':
 
     world = World(500, 600, Viewport.BEIGE)
 
-    viewport2 = Viewport(-10, 2, 10, -2, (0,200,0))
-    viewport = Viewport(-2, 2, 2, -2)
+    viewport2 = Viewport(-20, 4, 20, -4, (0,200,0))
+    viewport = Viewport(-2, 2, 2, -2, (200,0,0))
 
     world.add_viewport(viewport2, 0, 0, 500, 100)
     world.add_viewport(viewport, 0, 100, 500, 600)
 
-    seconds_pendulum = Pendulum(Point(0,1), Vector().from_polar(0.994, math.radians(320)))
+    seconds_pendulum = Pendulum(Point(0,1), Vector().from_polar((2/(2*math.pi)) * (2/(2*math.pi)) * scipy.constants.g, math.radians(320)))
     world.add_machine(seconds_pendulum)
+    seconds2_pendulum = Pendulum(Point(0,1), Vector().from_polar((4/(2*math.pi)) * (4/(2*math.pi)) * scipy.constants.g, math.radians(320)))
+    world.add_machine(seconds2_pendulum)
 
     viewport.add_axis()
     viewport.add_visualization(seconds_pendulum.visualization_basic)
 
     viewport2.add_axis((0,0,200))
-    viewport2.add_visualization(seconds_pendulum.visualization_basic)
+    viewport2.add_visualization(seconds2_pendulum.visualization_basic)
 
     frames = []
 
     step = 0.05
-    duration = 2
+    duration = 4
 
     duration = step * math.ceil(duration/step)
     for i in range(1 + int(duration / step)):
