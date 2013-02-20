@@ -407,7 +407,7 @@ if __name__ == '__main__':
 
     seconds_pendulum = Pendulum(Point(0,1), Vector().from_polar((2/(2*math.pi)) * (2/(2*math.pi)) * scipy.constants.g, math.radians(320)))
     world.add_machine(seconds_pendulum)
-    seconds2_pendulum = Pendulum(Point(0,2), Vector().from_polar((4/(2*math.pi)) * (4/(2*math.pi)) * scipy.constants.g, math.radians(320)))
+    seconds2_pendulum = Pendulum(Point(0,2), Vector().from_polar((4/(2*math.pi)) * (4/(2*math.pi)) * scipy.constants.g, math.radians(300)))
     world.add_machine(seconds2_pendulum)
 
     timer = Timer(Point(2,2))
