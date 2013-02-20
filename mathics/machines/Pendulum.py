@@ -271,7 +271,7 @@ class Viewport(object):
             draw.text((x, y), text, fill=self.color)
 
         def __str__(self):
-            return "Viewport.Line: (%s start %s end)" % (self.get_start(), self.get_end())
+            return "Viewport.Text: (%s start %s end)" % (self.get_start(), self.get_end())
 
     def add_circle(self, center, styles, radius, color):
         self.objects.append(Viewport.Circle(center, styles, radius, color))
