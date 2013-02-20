@@ -351,7 +351,7 @@ if __name__ == '__main__':
 
     frames = []
 
-    step = 0.1
+    step = 0.05
     duration = 2
 
     duration = step * math.ceil(duration/step)
