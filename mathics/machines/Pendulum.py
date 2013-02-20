@@ -88,6 +88,9 @@ class Point(Machine):
         self.x += point.x
         self.y += point.y
 
+    def translate(self, point):
+        return type(self)(self.x + point.x, self.y + point.y)
+
 class Vector(Point):
     def __str__(self):
         return "Vector: (%f r, %f theta)" % (self.r(), math.degrees(self.theta()))
@@ -113,6 +116,11 @@ class Vector(Point):
         self.x = vector.x * scale
         self.y = vector.y * scale
 
+    def align(self, vector):
+        scale = self.r() / vector.r()
+        x = vector.x * scale
+        y = vector.y * scale
+        return type(self)(x, y)
 
 class Viewport(object):
     NONE = 0
@@ -354,11 +362,8 @@ class Pendulum(Machine):
     def visualization_basic(self, vp):
         vp.add_line(self.pivot, self._weight, Viewport.SOLID, 0.01, Viewport.BLACK)
 
-        # todo: should be able to chain these
-        topleft = Point().from_point(self.pivot)
-        bottomright = Point().from_point(self.pivot)
-        topleft.do_translate(Point(-0.1,0.1))
-        bottomright.do_translate(Point(0.1,0))
+        topleft = Point.from_point(self.pivot).translate(Point(-0.1,0.1))
+        bottomright = Point.from_point(self.pivot).translate(Point(0.1,0))
         vp.add_rectangle(topleft, bottomright, Viewport.SOLID, 0.1, Viewport.BLACK)
 
         vp.add_circle(self._weight, Viewport.SOLID, 0.05, Viewport.BLACK)
@@ -369,7 +374,7 @@ class Pendulum(Machine):
         x = self.t
 
         self.set_time(curtime-0.1)
-        oldweight = Vector().from_vector(self.weight)
+        oldweight = Vector.from_vector(self.weight)
         self.set_time(curtime)
         y = Vector(self.weight.x - oldweight.x, self.weight.y - oldweight.y).r()
         return Point(x, y)
@@ -450,9 +455,9 @@ if __name__ == '__main__':
     world.add_viewport(viewport, 0, y/6, x, y)
     world.add_viewport(viewport_different, 0, 0, x, y/6)
 
-    seconds_pendulum = Pendulum(Point(0,1), Vector().from_polar((2/(2*math.pi)) * (2/(2*math.pi)) * scipy.constants.g, math.radians(320)))
+    seconds_pendulum = Pendulum(Point(0,1), Vector.from_polar((2/(2*math.pi)) * (2/(2*math.pi)) * scipy.constants.g, math.radians(320)))
     world.add_machine(seconds_pendulum)
-    seconds2_pendulum = Pendulum(Point(0,2), Vector().from_polar((4/(2*math.pi)) * (4/(2*math.pi)) * scipy.constants.g, math.radians(300)))
+    seconds2_pendulum = Pendulum(Point(0,2), Vector.from_polar((4/(2*math.pi)) * (4/(2*math.pi)) * scipy.constants.g, math.radians(300)))
     world.add_machine(seconds2_pendulum)
 
     timer = Timer(Point(2,2))
