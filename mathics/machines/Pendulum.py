@@ -241,7 +241,11 @@ class Viewport(object):
         def __init__(self, point, text, color):
             if hasattr(point, '__call__'):
                 self.get_point = point
+            elif isinstance(point, tuple) and hasattr(point[0], '__call__'):
+                self._get_point = point[0]
+                self._get_point_args = point[1]
             else:
+                self._get_point = None
                 self.point = point
             if hasattr(text, '__call__'):
                 self.get_text = text
@@ -250,6 +254,8 @@ class Viewport(object):
             self.color = color
 
         def get_point(self):
+            if self._get_point:
+                return self._get_point(self._get_point_args)
             return self.point
 
         def get_text(self):
@@ -341,33 +347,27 @@ class Pendulum(Machine):
         self.weight.set_time(t)
 
         # align to new position unrotate angle zero by 90 degrees
-        self.weight.do_align(Vector().from_polar(1, self._angle_zero * math.cos(t / (math.sqrt(self.weight.r() / scipy.constants.g))) - math.radians(90)))
+        self.weight.do_align(Vector.from_polar(1, self._angle_zero * math.cos(t / (math.sqrt(self.weight.r() / scipy.constants.g))) - math.radians(90)))
 
-    def _weight(self):
-        p = Point().from_point(self.pivot)
-        p.do_translate(self.weight)
-        return p
+    def _weight_point(self, translate=None):
+        if translate is None:
+            translate = [0, 0]
+        return Point.from_point(self.pivot).translate(self.weight).translate(Point(translate[0], translate[1]))
 
-    def _weight_offset(self):
-        p = Point().from_point(self.pivot)
-        p.do_translate(self.weight)
-        p.do_translate(Point(-0.5, -0.2))
-        return p
-
-    def _weight_x_y(self):
-        p = Point().from_point(self.pivot)
-        p.do_translate(self.weight)
+    def _weight_coords_text(self):
+        p = Point.from_point(self.pivot).translate(self.weight)
         return "(%0.3f, %0.3f)" % (p.x, p.y)
 
-    def visualization_basic(self, vp):
-        vp.add_line(self.pivot, self._weight, Viewport.SOLID, 0.01, Viewport.BLACK)
+    def visualization_basic(self, vp, data={}):
+        vp.add_line(self.pivot, self._weight_point,
+                    Viewport.SOLID, 0.01, Viewport.BLACK)
 
         topleft = Point.from_point(self.pivot).translate(Point(-0.1,0.1))
         bottomright = Point.from_point(self.pivot).translate(Point(0.1,0))
         vp.add_rectangle(topleft, bottomright, Viewport.SOLID, 0.1, Viewport.BLACK)
 
-        vp.add_circle(self._weight, Viewport.SOLID, 0.05, Viewport.BLACK)
-        vp.add_text(self._weight_offset, self._weight_x_y, (0,0,170))
+        vp.add_circle(self._weight_point, Viewport.SOLID, 0.05, Viewport.BLACK)
+        vp.add_text((self._weight_point,(-0.5,-0.1)), self._weight_coords_text, (0,0,170))
 
     def _time_velocity(self):
         curtime = self.t
