@@ -32,19 +32,19 @@ class World(object):
     def add_viewport(self, viewport, x1, y1, x2, y2):
         scale_x = (x2-x1) / (viewport.x2_internal-viewport.x1_internal)
         scale_y = (y1-y2) / (viewport.y1_internal-viewport.y2_internal)
-        shift_x = x1
-        shift_y = y1
-        shift_x_internal = -viewport.x1_internal
-        shift_y_internal = -viewport.y1_internal
+        translate_x = x1
+        translate_y = y1
+        translate_x_internal = -viewport.x1_internal
+        translate_y_internal = -viewport.y1_internal
 
         self.viewports.append({
                 "viewport": viewport,
-                "shift_x": shift_x,
-                "shift_y": shift_y,
+                "translate_x": translate_x,
+                "translate_y": translate_y,
                 "scale_x": scale_x,
                 "scale_y": scale_y,
-                "shift_x_internal": shift_x_internal,
-                "shift_y_internal": shift_y_internal,
+                "translate_x_internal": translate_x_internal,
+                "translate_y_internal": translate_y_internal,
                 })
 
     def set_time(self, t):
@@ -55,7 +55,7 @@ class World(object):
         image = Image.new('RGB', (self.width, self.height), self.background)
         draw = ImageDraw.Draw(image)
         for vp in self.viewports:
-            vp["viewport"].draw(draw, vp["shift_x"], vp["shift_y"], vp["scale_x"], vp["scale_y"], vp["shift_x_internal"], vp["shift_y_internal"])
+            vp["viewport"].draw(draw, vp)
 
         del draw
         return image
@@ -123,23 +123,20 @@ class Vector(Point):
         return type(self)(x, y)
 
 class Viewport(object):
-    NONE = 0
-    SOLID = 1
-
     BLACK=(0, 0, 0)
     GRAY=(200, 200, 200)
     BEIGE=(245, 245, 220)
     WHITE=(255, 255, 255)
-    def __init__(self, x1, y1, x2, y2, background=None):
+    def __init__(self, x1, y1, x2, y2, background_color=None):
         self.objects = []
         self.x1_internal = x1
         self.y1_internal = y1
         self.x2_internal = x2
         self.y2_internal = y2
-        self.background = background
+        self.background_color = background_color
 
-        if self.background:
-            self.add_rectangle(Point(x1,y1), Point(x2,y2), Viewport.NONE, 0, background)
+        if self.background_color is not None:
+            self.add_object(Viewport.Rectangle(Point(x1,y1), Point(x2,y2), background_color))
 
     def __str__(self):
         r = ""
@@ -147,147 +144,116 @@ class Viewport(object):
             r += str(obj)
         return r
 
-    class Circle(object):
-        def __init__(self, center, styles, radius, color):
-            if hasattr(center, '__call__'):
-                self.get_center = center
-            else:
-                self.center = center
-            self.styles = styles
-            self.radius = radius
-            self.color = color
+    @classmethod
+    def transform_x(cls, x, transform):
+        return (x + transform['translate_x_internal']) * transform['scale_x'] + transform['translate_x']
 
-        def get_center(self):
-            return self.center
+    @classmethod
+    def transform_y(cls, y, transform):
+        return (y + transform['translate_y_internal']) * transform['scale_y'] + transform['translate_y']
 
-        def draw(self, draw, shift_x, shift_y, scale_x, scale_y, shift_x_internal, shift_y_internal):
-            x = (self.get_center().x + shift_x_internal) * scale_x + shift_x
-            y = (self.get_center().y + shift_y_internal) * scale_y + shift_y
-            radius_x = self.radius * math.fabs(scale_x)
-            radius_y = self.radius * math.fabs(scale_y)
+    class DrawObject(object):
+        def _create_functions(self, *args):
+            for name, arg in zip(self.MEMBERS, args):
+                func = """
+import types
+def get_{name}(self):
+    if hasattr(self, '_get_{name}'):
+        if len(self._get_{name}[1]) > 0:
+            return self._get_{name}[0](self._get_{name}[1])
+        else:
+            return self._get_{name}[0]()
+    return self._{name}
+setattr(self, 'get_{name}', types.MethodType(get_{name}, self))
+
+if hasattr(arg, '__call__'):
+    self._get_{name} = (arg, ())
+elif isinstance(arg, tuple) and hasattr(arg[0], '__call__'):
+    self._get_{name} = (arg[0], arg[1])
+else:
+    setattr(self, '_{name}', arg)
+""".format(name=name)
+                exec(func)
+
+    class Circle(DrawObject):
+        MEMBERS = ['center', 'radius', 'color']
+        def __init__(self, center, radius, color):
+            self._create_functions(center, radius, color)
+
+        def draw(self, draw, transform):
+            x = Viewport.transform_x(self.get_center().x, transform)
+            y = Viewport.transform_y(self.get_center().y, transform)
+            radius_x = self.get_radius() * math.fabs(transform['scale_x'])
+            radius_y = self.get_radius() * math.fabs(transform['scale_y'])
 
             box = (x - radius_x, y - radius_y, x + radius_x, y + radius_y)
-            draw.ellipse(box, fill=self.color)
+            draw.ellipse(box, fill=self.get_color())
 
         def __str__(self):
             return "Viewport.Circle: (%s %f)" % (self.get_center(), self.radius)
 
-    class Line(object):
-        def __init__(self, start, end, styles, width, color):
-            if hasattr(start, '__call__'):
-                self.get_start = start
-            else:
-                self.start = start
-            if hasattr(end, '__call__'):
-                self.get_end = end
-            else:
-                self.end = end
-            self.styles = styles
-            self.width = width
-            self.color = color
+    class Line(DrawObject):
+        MEMBERS = ['start', 'end', 'width', 'color']
+        def __init__(self, start, end, width, color):
+            self._create_functions(start, end, width, color)
 
-        def get_start(self):
-            return self.start
-
-        def get_end(self):
-            return self.end
-
-        def draw(self, draw, shift_x, shift_y, scale_x, scale_y, shift_x_internal, shift_y_internal):
+        def draw(self, draw, transform):
             start = self.get_start()
             end = self.get_end()
 
-            box = ((start.x + shift_x_internal) * scale_x + shift_x,
-                   (start.y + shift_y_internal) * scale_y + shift_y,
-                   (end.x + shift_x_internal) * scale_x + shift_x,
-                   (end.y + shift_y_internal) * scale_y + shift_y)
-            draw.line(box, fill=self.color, width=int(math.ceil(self.width*scale_x)))
+            box = (Viewport.transform_x(start.x, transform),
+                   Viewport.transform_y(start.y, transform),
+                   Viewport.transform_x(end.x, transform),
+                   Viewport.transform_y(end.y, transform))
+
+            width = int(math.ceil(self.get_width()*transform['scale_x']))
+            draw.line(box, fill=self.get_color(), width=width)
 
         def __str__(self):
             return "Viewport.Line: (%s start %s end)" % (self.get_start(), self.get_end())
 
-    class Rectangle(object):
-        def __init__(self, topleft, bottomright, styles, color):
-            if hasattr(topleft, '__call__'):
-                self.get_topleft = topleft
-            else:
-                self.topleft = topleft
-            if hasattr(bottomright, '__call__'):
-                self.get_bottomright = bottomright
-            else:
-                self.bottomright = bottomright
-            self.styles = styles
-            self.color = color
+    class Rectangle(DrawObject):
+        MEMBERS = ['topleft', 'bottomright', 'color']
+        def __init__(self, topleft, bottomright, color):
+            self._create_functions(topleft, bottomright, color)
 
-        def get_topleft(self):
-            return self.topleft
-
-        def get_bottomright(self):
-            return self.bottomright
-
-        def draw(self, draw, shift_x, shift_y, scale_x, scale_y, shift_x_internal, shift_y_internal):
+        def draw(self, draw, transform):
             topleft = self.get_topleft()
             bottomright = self.get_bottomright()
 
-            box = ((topleft.x + shift_x_internal) * scale_x + shift_x,
-                   (topleft.y + shift_y_internal) * scale_y + shift_y,
-                   (bottomright.x + shift_x_internal) * scale_x + shift_x,
-                   (bottomright.y + shift_y_internal) * scale_y + shift_y)
-            draw.rectangle(box, fill=self.color)
+            box = (Viewport.transform_x(topleft.x, transform),
+                   Viewport.transform_y(topleft.y, transform),
+                   Viewport.transform_x(bottomright.x, transform),
+                   Viewport.transform_y(bottomright.y, transform))
+            draw.rectangle(box, fill=self.get_color())
 
         def __str__(self):
-            return "Viewport.Line: (%s start %s end)" % (self.get_start(), self.get_end())
+            return "Viewport.Rectangle: (%s topleft %s bottomright)" % (self.get_topleft(), self.get_bottomright())
 
-    class Text(object):
+    class Text(DrawObject):
+        MEMBERS = ['point', 'text', 'color']
         def __init__(self, point, text, color):
-            if hasattr(point, '__call__'):
-                self.get_point = point
-            elif isinstance(point, tuple) and hasattr(point[0], '__call__'):
-                self._get_point = point[0]
-                self._get_point_args = point[1]
-            else:
-                self._get_point = None
-                self.point = point
-            if hasattr(text, '__call__'):
-                self.get_text = text
-            else:
-                self.text = text
-            self.color = color
+            self._create_functions(point, text, color)
 
-        def get_point(self):
-            if self._get_point:
-                return self._get_point(self._get_point_args)
-            return self.point
-
-        def get_text(self):
-            return self.text
-
-        def draw(self, draw, shift_x, shift_y, scale_x, scale_y, shift_x_internal, shift_y_internal):
+        def draw(self, draw, transform):
             point = self.get_point()
             text = self.get_text()
 
-            x = (point.x + shift_x_internal) * scale_x + shift_x
-            y = (point.y + shift_y_internal) * scale_y + shift_y
+            x = Viewport.transform_x(point.x, transform)
+            y = Viewport.transform_y(point.y, transform)
 
-            draw.text((x, y), text, fill=self.color)
+            draw.text((x, y), text, fill=self.get_color())
 
         def __str__(self):
             return "Viewport.Text: (%s start %s end)" % (self.get_start(), self.get_end())
 
-    def add_circle(self, center, styles, radius, color):
-        self.objects.append(Viewport.Circle(center, styles, radius, color))
 
-    def add_rectangle(self, topleft, bottomright, styles, radius, color):
-        self.objects.append(Viewport.Rectangle(topleft, bottomright, styles, color))
-
-    def add_line(self, start, end, styles, width, color):
-        self.objects.append(Viewport.Line(start, end, styles, width, color))
-
-    def add_text(self, point, text, color):
-        self.objects.append(Viewport.Text(point, text, color))
+    def add_object(self, obj):
+        self.objects.append(obj)
 
     def add_axis(self, smallhash=1, largehash=5, color=GRAY):
-        self.add_line(Point(0,self.y1_internal), Point(0,self.y2_internal), Viewport.SOLID, 0, color)
-        self.add_line(Point(self.x1_internal,0), Point(self.x2_internal,0), Viewport.SOLID, 0, color)
+        self.add_object(Viewport.Line(Point(0,self.y1_internal), Point(0,self.y2_internal), 0, color))
+        self.add_object(Viewport.Line(Point(self.x1_internal,0), Point(self.x2_internal,0), 0, color))
 
         def frange(start, end, step):
             distance = end - start
@@ -297,32 +263,32 @@ class Viewport(object):
 
         y = smallhash/4.0
         for x in frange(0, self.x1_internal, -smallhash):
-            self.add_line(Point(x,-y), Point(x,y), Viewport.SOLID, 0, color)
+            self.add_object(Viewport.Line(Point(x,-y), Point(x,y), 0, color))
         for x in frange(0, self.x2_internal, smallhash):
-            self.add_line(Point(x,-y), Point(x,y), Viewport.SOLID, 0, color)
+            self.add_object(Viewport.Line(Point(x,-y), Point(x,y), 0, color))
         x = smallhash/4.0
         for y in frange(0, self.y1_internal, smallhash):
-            self.add_line(Point(-x,y), Point(x,y), Viewport.SOLID, 0, color)
+            self.add_object(Viewport.Line(Point(-x,y), Point(x,y), 0, color))
         for y in frange(0, self.y2_internal, -smallhash):
-            self.add_line(Point(-x,y), Point(x,y), Viewport.SOLID, 0, color)
+            self.add_object(Viewport.Line(Point(-x,y), Point(x,y), 0, color))
 
         y = smallhash/2.0
         for x in frange(0, self.x1_internal, -largehash):
-            self.add_line(Point(x,-y), Point(x,y), Viewport.SOLID, 0, color)
+            self.add_object(Viewport.Line(Point(x,-y), Point(x,y), 0, color))
         for x in frange(0, self.x2_internal, largehash):
-            self.add_line(Point(x,-y), Point(x,y), Viewport.SOLID, 0, color)
+            self.add_object(Viewport.Line(Point(x,-y), Point(x,y), 0, color))
         x = smallhash/2.0
         for y in frange(0, self.y1_internal, largehash):
-            self.add_line(Point(-x,y), Point(x,y), Viewport.SOLID, 0, color)
+            self.add_object(Viewport.Line(Point(-x,y), Point(x,y), 0, color))
         for y in frange(0, self.y2_internal, -largehash):
-            self.add_line(Point(-x,y), Point(x,y), Viewport.SOLID, 0, color)
+            self.add_object(Viewport.Line(Point(-x,y), Point(x,y), 0, color))
 
     def add_visualization(self, visualization):
         visualization(self)
 
-    def draw(self, draw, shift_x, shift_y, scale_x, scale_y, shift_x_internal, shift_y_internal):
+    def draw(self, draw, transform):
         for obj in self.objects:
-            obj.draw(draw, shift_x, shift_y, scale_x, scale_y, shift_x_internal, shift_y_internal)
+            obj.draw(draw, transform)
 
 class Pendulum(Machine):
     def __init__(self, pivot, weight):
@@ -359,15 +325,15 @@ class Pendulum(Machine):
         return "(%0.3f, %0.3f)" % (p.x, p.y)
 
     def visualization_basic(self, vp, data={}):
-        vp.add_line(self.pivot, self._weight_point,
-                    Viewport.SOLID, 0.01, Viewport.BLACK)
+        vp.add_object(Viewport.Line(self.pivot, self._weight_point,
+                                    0.01, Viewport.BLACK))
 
         topleft = Point.from_point(self.pivot).translate(Point(-0.1,0.1))
         bottomright = Point.from_point(self.pivot).translate(Point(0.1,0))
-        vp.add_rectangle(topleft, bottomright, Viewport.SOLID, 0.1, Viewport.BLACK)
+        vp.add_object(Viewport.Rectangle(topleft, bottomright, Viewport.BLACK))
 
-        vp.add_circle(self._weight_point, Viewport.SOLID, 0.05, Viewport.BLACK)
-        vp.add_text((self._weight_point,(-0.5,-0.1)), self._weight_coords_text, (0,0,170))
+        vp.add_object(Viewport.Circle(self._weight_point, 0.05, Viewport.BLACK))
+        vp.add_object(Viewport.Text((self._weight_point,(-0.5,-0.1)), self._weight_coords_text,(0,0,170)))
 
     def _time_velocity(self):
         curtime = self.t
@@ -380,7 +346,7 @@ class Pendulum(Machine):
         return Point(x, y)
 
     def visualization_different(self, vp):
-        vp.add_circle(self._time_velocity, Viewport.SOLID, 0.05, Viewport.BLACK)
+        vp.add_object(Viewport.Circle(self._time_velocity, 0.05, Viewport.BLACK))
 
 
 class Timer(Machine):
@@ -399,7 +365,7 @@ class Timer(Machine):
         return "%0.2f s" % self.t
 
     def visualization_basic(self, vp):
-        vp.add_text(self.point, self._t, Viewport.BLACK)
+        vp.add_object(Viewport.Text(self.point, self._t, Viewport.BLACK))
 
 
 def serve_gif(frames, duration):
@@ -475,7 +441,7 @@ if __name__ == '__main__':
 
     step = 0.05
     duration = 4
-    fps = 60
+    fps = 30
 
     blur = int(math.ceil(fps/(1.0/step)))
 
