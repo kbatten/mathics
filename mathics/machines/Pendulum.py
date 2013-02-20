@@ -35,8 +35,6 @@ class World(object):
         shift_x_internal = -viewport.x1_internal
         shift_y_internal = -viewport.y1_internal
 
-        print scale_x, scale_y
-
         self.viewports.append({
                 "viewport": viewport,
                 "shift_x": shift_x,
