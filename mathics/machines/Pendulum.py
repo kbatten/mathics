@@ -1,5 +1,5 @@
 import math
-import random
+import time
 
 from PIL import Image, ImageDraw
 import numpy
@@ -355,11 +355,23 @@ if __name__ == '__main__':
 
     step = 0.05
     duration = 4
+    blur = 5
 
+    timer_start = time.time()
     duration = step * math.ceil(duration/step)
     for i in range(1 + int(duration / step)):
         t = i * step
-        world.set_time(t)
-        frames.append(world.get_frame())
+
+        frame = None
+        for i in reversed(range(blur)):
+            world.set_time(t - (i * step/blur))
+            if not frame:
+                frame = world.get_frame()
+            else:
+                frame = Image.blend(frame, world.get_frame(), 0.4)
+
+        frames.append(frame)
+    timer_end = time.time()
+    print "generated %i frames in %i seconds" % (len(frames) * blur, timer_end - timer_start)
 
     serve_gif(frames, duration)
