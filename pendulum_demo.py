@@ -3,6 +3,7 @@
 import sys
 import math
 import time
+import StringIO
 
 from PIL import Image
 import scipy.constants
@@ -14,8 +15,14 @@ from mathics.machines import Pendulum, Timer, Point, Vector
 def serve_gif(frames, duration, nq):
     from PIL import Image
     from images2gif import writeGif
-    filename = 'image.gif'
-    writeGif(filename, frames, duration/len(frames), nq=nq)
+    gif = StringIO.StringIO()
+    timer_start = time.time()
+    writeGif(gif, frames, duration/len(frames), nq=nq)
+    with open('image.gif', 'wb') as f:
+        gif.seek(0)
+        f.write(gif.read())
+    timer_end = time.time()
+    print "stored gif in %i seconds." % (timer_end - timer_start)
 
     # server image.gif
     from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
@@ -32,8 +39,9 @@ def serve_gif(frames, duration, nq):
             self.send_header('Content-type','image/gif')
             self.end_headers()
 
-            with open(filename, 'rb') as f:
-                self.wfile.write(f.read())
+            print "write gif"
+            gif.seek(0)
+            self.wfile.write(gif.read())
             return
 
     try:

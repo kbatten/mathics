@@ -261,15 +261,15 @@ def _writeGifToFile(fp, images, durations, loops):
 
 ## Exposed functions 
 
-def writeGif(filename, images, duration=0.1, repeat=True, dither=False, nq=0):
-    """ writeGif(filename, images, duration=0.1, repeat=True, dither=False)
+def writeGif(fp, images, duration=0.1, repeat=True, dither=False, nq=0):
+    """ writeGif(fp, images, duration=0.1, repeat=True, dither=False)
     
     Write an animated gif from the specified images. 
     
     Parameters
     ----------
-    filename : string
-       The name of the file to write the image to.
+    fp : file object or string
+       The file or name of the file to write the image to.
     images : list
         Should be a list consisting of PIL images or numpy arrays. 
         The latter should be between 0 and 255 for integer types, and 
@@ -344,14 +344,21 @@ def writeGif(filename, images, duration=0.1, repeat=True, dither=False, nq=0):
     else:
         duration = [duration for im in images2]
     
-    # Open file
-    fp = open(filename, 'wb')
+    # Open file if fp isn't file-like
+    if not hasattr(fp, 'write'):
+        print "opening fp"
+        fp = open(fp, 'wb')
+        fp_close = True
+    else:
+        fp_close = False
     
     # Write
     try:
         n = _writeGifToFile(fp, images2, duration, loops)
     finally:
-        fp.close()
+        if fp_close:
+            print "close"
+            fp.close()
     
 
 def readGif(filename, asNumpy=True):
