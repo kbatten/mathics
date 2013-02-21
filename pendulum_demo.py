@@ -32,7 +32,7 @@ def serve_gif(frames, duration):
             self.send_header('Content-type','image/gif')
             self.end_headers()
 
-            with open("image.gif") as f:
+            with open(filename, 'rb') as f:
                 self.wfile.write(f.read())
             return
 
