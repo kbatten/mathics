@@ -11,11 +11,11 @@ from mathics.world import World
 from mathics.viewport import Viewport
 from mathics.machines import Pendulum, Timer, Point, Vector
 
-def serve_gif(frames, duration):
+def serve_gif(frames, duration, nq):
     from PIL import Image
     from images2gif import writeGif
     filename = 'image.gif'
-    writeGif(filename, frames, duration/len(frames))
+    writeGif(filename, frames, duration/len(frames), nq=nq)
 
     # server image.gif
     from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
@@ -103,4 +103,4 @@ if __name__ == '__main__':
     timer_end = time.time()
     print "generated %i frames in %i seconds. %f fps" % (len(frames) * blur, timer_end - timer_start, (len(frames)*blur)/duration)
 
-    serve_gif(frames, duration)
+    serve_gif(frames, duration, 0)
