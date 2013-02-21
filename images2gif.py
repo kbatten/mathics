@@ -322,11 +322,11 @@ def writeGif(filename, images, duration=0.1, repeat=True, dither=False, nq=0):
         # NeuQuant algorithm
         for im in images:
             im = im.convert("RGBA") # NQ assumes RGBA
-            nq = NeuQuant(im, int(nq)) # Learn colors from image
+            nqa = NeuQuant(im, int(nq)) # Learn colors from image
             if dither:
-                im = im.convert("RGB").quantize(palette=nq.paletteImage())
+                im = im.convert("RGB").quantize(palette=nqa.paletteImage())
             else:
-                im = nq.quantize(im)  # Use to quantize the image itself
+                im = nqa.quantize(im)  # Use to quantize the image itself
             images2.append(im)
     else:
         # Adaptive PIL algorithm
