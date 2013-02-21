@@ -152,34 +152,41 @@ class Viewport(object):
     def transform_y(cls, y, transform):
         return (y + transform['translate_y_internal']) * transform['scale_y'] + transform['translate_y']
 
-    class DrawObject(object):
-        def _create_functions(self, *args):
-            for name, arg in zip(self.MEMBERS, args):
-                func = """
-import types
-def get_{name}(self):
-    if hasattr(self, '_get_{name}'):
-        if len(self._get_{name}[1]) > 0:
-            return self._get_{name}[0](self._get_{name}[1])
-        else:
-            return self._get_{name}[0]()
-    return self._{name}
-setattr(self, 'get_{name}', types.MethodType(get_{name}, self))
+    # decorator
+    def drawobject(*args):
+        def wrap(cls):
+            def __init__(self, *vargs):
+                for attr,arg in zip(args,vargs):
+                    if hasattr(arg, '__call__'):
+                        setattr(self, '_get_%s'%attr, (arg, ()))
+                    elif isinstance(arg, tuple) and hasattr(arg[0], '__call__'):
+                        setattr(self, '_get_%s'%attr, (arg[0], arg[1]))
+                    else:
+                        setattr(self, '_%s'%attr, arg)
+            setattr(cls, '__init__', __init__)
+            for attr in args:
+                setattr(cls, '_%s'%attr, None)
+                setattr(cls, 'get_%s'%attr, None)
+                setattr(cls, '_get_%s'%attr, (None,()))
+                # if a function argument exists call _get_attr(arg)
+                # elif a function exists call _get_attr()
+                # else return _attr
+                get_function = eval("lambda self: getattr(self, '_get_%s'%attr)[1] and getattr(self, '_get_%s'%attr)[0](getattr(self, '_get_%s'%attr)[1]) or getattr(self, '_get_%s'%attr)[0] and getattr(self, '_get_%s'%attr)[0]() or getattr(self, '_%s'%attr)",{'attr':attr})
+                setattr(cls, 'get_%s'%attr, get_function)
 
-if hasattr(arg, '__call__'):
-    self._get_{name} = (arg, ())
-elif isinstance(arg, tuple) and hasattr(arg[0], '__call__'):
-    self._get_{name} = (arg[0], arg[1])
-else:
-    setattr(self, '_{name}', arg)
-""".format(name=name)
-                exec(func)
+#            str_function = lambda self: 'Viewport.' + self._name_
+#            setattr(cls, '__str__', str_function)
+            setattr(cls, '_name_', cls.__name__)
 
-    class Circle(DrawObject):
-        MEMBERS = ['center', 'radius', 'color']
-        def __init__(self, center, radius, color):
-            self._create_functions(center, radius, color)
+            str_function = lambda self: eval('"Viewport.%s (' + ', '.join(['%s '+arg for arg in args])+')"%(self._name_, '+', '.join(['self.get_'+arg+'()' for arg in args])+')')
+            setattr(cls, '__str__', str_function)
 
+
+            return cls
+        return wrap
+
+    @drawobject('center', 'radius', 'color')
+    class Circle(object):
         def draw(self, draw, transform):
             x = Viewport.transform_x(self.get_center().x, transform)
             y = Viewport.transform_y(self.get_center().y, transform)
@@ -189,14 +196,8 @@ else:
             box = (x - radius_x, y - radius_y, x + radius_x, y + radius_y)
             draw.ellipse(box, fill=self.get_color())
 
-        def __str__(self):
-            return "Viewport.Circle: (%s %f)" % (self.get_center(), self.radius)
-
-    class Line(DrawObject):
-        MEMBERS = ['start', 'end', 'width', 'color']
-        def __init__(self, start, end, width, color):
-            self._create_functions(start, end, width, color)
-
+    @drawobject('start', 'end', 'width', 'color')
+    class Line(object):
         def draw(self, draw, transform):
             start = self.get_start()
             end = self.get_end()
@@ -209,14 +210,8 @@ else:
             width = int(math.ceil(self.get_width()*transform['scale_x']))
             draw.line(box, fill=self.get_color(), width=width)
 
-        def __str__(self):
-            return "Viewport.Line: (%s start %s end)" % (self.get_start(), self.get_end())
-
-    class Rectangle(DrawObject):
-        MEMBERS = ['topleft', 'bottomright', 'color']
-        def __init__(self, topleft, bottomright, color):
-            self._create_functions(topleft, bottomright, color)
-
+    @drawobject('topleft', 'bottomright', 'color')
+    class Rectangle(object):
         def draw(self, draw, transform):
             topleft = self.get_topleft()
             bottomright = self.get_bottomright()
@@ -227,14 +222,8 @@ else:
                    Viewport.transform_y(bottomright.y, transform))
             draw.rectangle(box, fill=self.get_color())
 
-        def __str__(self):
-            return "Viewport.Rectangle: (%s topleft %s bottomright)" % (self.get_topleft(), self.get_bottomright())
-
-    class Text(DrawObject):
-        MEMBERS = ['point', 'text', 'color']
-        def __init__(self, point, text, color):
-            self._create_functions(point, text, color)
-
+    @drawobject('point', 'text', 'color')
+    class Text(object):
         def draw(self, draw, transform):
             point = self.get_point()
             text = self.get_text()
@@ -243,9 +232,6 @@ else:
             y = Viewport.transform_y(point.y, transform)
 
             draw.text((x, y), text, fill=self.get_color())
-
-        def __str__(self):
-            return "Viewport.Text: (%s start %s end)" % (self.get_start(), self.get_end())
 
 
     def add_object(self, obj):
@@ -331,7 +317,6 @@ class Pendulum(Machine):
         topleft = Point.from_point(self.pivot).translate(Point(-0.1,0.1))
         bottomright = Point.from_point(self.pivot).translate(Point(0.1,0))
         vp.add_object(Viewport.Rectangle(topleft, bottomright, Viewport.BLACK))
-
         vp.add_object(Viewport.Circle(self._weight_point, 0.05, Viewport.BLACK))
         vp.add_object(Viewport.Text((self._weight_point,(-0.5,-0.1)), self._weight_coords_text,(0,0,170)))
 
