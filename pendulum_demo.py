@@ -39,7 +39,6 @@ def serve_gif(frames, duration, nq):
             self.send_header('Content-type','image/gif')
             self.end_headers()
 
-            print "write gif"
             gif.seek(0)
             self.wfile.write(gif.read())
             return
