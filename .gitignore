@@ -2,5 +2,5 @@
 *.log
 image.gif
 pendulum_demo.spec
-build/
-dist/
+/build/
+/dist/
