@@ -61,7 +61,7 @@ if __name__ == '__main__':
     x = 500
     y = 6 * x / 5
 
-    world = World(x, y, (255,0,0))
+    world = World(x, y, Viewport.WHITE)
 
     viewport_different = Viewport(-4, 1.9, 8, -0.5, (0,200,0))
     viewport = Viewport(-3, 3, 3, -3, Viewport.BEIGE)

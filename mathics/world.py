@@ -4,8 +4,8 @@ class World(object):
     def __init__(self, width, height, background):
         self.machines = []
         self.viewports = []
-        self.width = width
-        self.height = height
+        self.width = float(width)
+        self.height = float(height)
         self.background = background
 
     def __str__(self):
@@ -43,7 +43,7 @@ class World(object):
             machine.set_time(t)
 
     def get_frame(self):
-        image = Image.new('RGB', (self.width, self.height), self.background)
+        image = Image.new('RGB', (int(self.width), int(self.height)), self.background)
         draw = ImageDraw.Draw(image)
         for vp in self.viewports:
             vp["viewport"].draw(draw, vp)

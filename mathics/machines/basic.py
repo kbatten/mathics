@@ -13,8 +13,8 @@ class Machine(object):
 
 class Point(Machine):
     def __init__(self, x=0, y=0):
-        self.x = x
-        self.y = y
+        self.x = float(x)
+        self.y = float(y)
 
     def __str__(self):
         return "Point: (%f x, %f y)" % (self.x, self.y)

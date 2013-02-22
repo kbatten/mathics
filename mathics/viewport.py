@@ -9,10 +9,10 @@ class Viewport(object):
     WHITE=(255, 255, 255)
     def __init__(self, x1, y1, x2, y2, background_color=None):
         self.objects = []
-        self.x1_internal = x1
-        self.y1_internal = y1
-        self.x2_internal = x2
-        self.y2_internal = y2
+        self.x1_internal = float(x1)
+        self.y1_internal = float(y1)
+        self.x2_internal = float(x2)
+        self.y2_internal = float(y2)
         self.background_color = background_color
 
         if self.background_color is not None:
