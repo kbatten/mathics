@@ -97,6 +97,6 @@ if __name__ == '__main__':
     duration = step * math.ceil(duration/step)
     frames = world.get_frames(0, duration, step, blur, 1.0/supersample)
     timer_end = time.time()
-    print "generated %i frames in %i seconds. %f fps" % (len(frames) * (blur+1) - blur, timer_end - timer_start, (len(frames)*blur)/duration)
+    print "generated %i frames in %i seconds. %f fps" % (len(frames) * (blur+1) - blur, timer_end - timer_start, (len(frames)*(blur+1))/duration)
 
     serve_gif(frames, duration)
