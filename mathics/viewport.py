@@ -56,8 +56,6 @@ class Viewport(object):
                 get_function = eval("lambda self: getattr(self, '_get_%s'%attr)[1] and getattr(self, '_get_%s'%attr)[0](getattr(self, '_get_%s'%attr)[1]) or getattr(self, '_get_%s'%attr)[0] and getattr(self, '_get_%s'%attr)[0]() or getattr(self, '_%s'%attr)",{'attr':attr})
                 setattr(cls, 'get_%s'%attr, get_function)
 
-#            str_function = lambda self: 'Viewport.' + self._name_
-#            setattr(cls, '__str__', str_function)
             setattr(cls, '_name_', cls.__name__)
 
             str_function = lambda self: eval('"Viewport.%s (' + ', '.join(['%s '+arg for arg in args])+')"%(self._name_, '+', '.join(['self.get_'+arg+'()' for arg in args])+')')
