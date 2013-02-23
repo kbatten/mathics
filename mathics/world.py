@@ -50,3 +50,23 @@ class World(object):
 
         del draw
         return image
+
+
+    def get_frames(self, ts, te, step, blur=0, nq=0):
+        frames = []
+        count = 0
+        for i in range(1 + int((te - ts) / step)):
+            t = i * step
+
+            frame = None
+            for i in reversed(range(blur+1)):
+                if t - (i * step/blur) >= 0:
+                    self.set_time(t - (i * step/blur))
+                    count += 1
+                    if not frame:
+                        frame = self.get_frame()
+                    else:
+                        frame = Image.blend(frame, self.get_frame(), 0.4)
+
+            frames.append(frame)
+        return frames

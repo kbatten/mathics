@@ -85,29 +85,14 @@ if __name__ == '__main__':
     viewport_different.add_visualization(seconds_pendulum.visualization_different)
     viewport_different.add_visualization(seconds2_pendulum.visualization_different)
 
-    frames = []
-
     step = 0.05
     duration = 4
     blur = 2
 
     timer_start = time.time()
     duration = step * math.ceil(duration/step)
-    # todo: add blur to mathics.World
-    for i in range(1 + int(duration / step)):
-        t = i * step
-
-        frame = None
-        for i in reversed(range(blur)):
-            if t - (i * step/blur) >= 0:
-                world.set_time(t - (i * step/blur))
-                if not frame:
-                    frame = world.get_frame()
-                else:
-                    frame = Image.blend(frame, world.get_frame(), 0.4)
-
-        frames.append(frame)
+    frames = world.get_frames(0, duration, step, blur)
     timer_end = time.time()
-    print "generated %i frames in %i seconds. %f fps" % (len(frames) * blur, timer_end - timer_start, (len(frames)*blur)/duration)
+    print "generated %i frames in %i seconds. %f fps" % (len(frames) * (blur+1) - blur, timer_end - timer_start, (len(frames)*blur)/duration)
 
     serve_gif(frames, duration, 0)
