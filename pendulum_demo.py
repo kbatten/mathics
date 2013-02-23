@@ -60,7 +60,7 @@ def serve_gif(frames, duration, nq=0):
 if __name__ == '__main__':
     supersample = 2
     width = 200
-    font_size = 11
+    font_size = 8
 
     step = 0.05
     duration = 4
