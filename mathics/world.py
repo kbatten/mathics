@@ -52,7 +52,7 @@ class World(object):
         return image
 
 
-    def get_frames(self, ts, te, step, blur=0, nq=0):
+    def get_frames(self, ts, te, step, blur=0):
         frames = []
         count = 0
         for i in range(1 + int((te - ts) / step)):
