@@ -60,8 +60,8 @@ class World(object):
 
             frame = None
             for i in reversed(range(blur+1)):
-                if t - (i * step/blur) >= 0:
-                    self.set_time(t - (i * step/blur))
+                if t - (i * step/(blur+1)) >= 0:
+                    self.set_time(t - (i * step/(blur+1)))
                     count += 1
                     if not frame:
                         frame = self.get_frame()
