@@ -1,12 +1,14 @@
 from PIL import Image, ImageDraw
 
 class World(object):
-    def __init__(self, width, height, background):
+    def __init__(self, width, height, background, font=None):
         self.machines = []
         self.viewports = []
         self.width = float(width)
         self.height = float(height)
         self.background = background
+        self.font = font
+        self.t = 0.0
 
     def __str__(self):
         r = "machines: "
@@ -36,11 +38,13 @@ class World(object):
                 "scale_y": scale_y,
                 "translate_x_internal": translate_x_internal,
                 "translate_y_internal": translate_y_internal,
+                "font": self.font,
                 })
 
     def set_time(self, t):
+        self.t = float(t)
         for machine in self.machines:
-            machine.set_time(t)
+            machine.set_time(float(t))
 
     def get_frame(self):
         image = Image.new('RGB', (int(self.width), int(self.height)), self.background)
@@ -52,9 +56,8 @@ class World(object):
         return image
 
 
-    def get_frames(self, ts, te, step, blur=0):
+    def get_frames(self, ts, te, step, blur=0, scale=1):
         frames = []
-        count = 0
         for i in range(1 + int((te - ts) / step)):
             t = i * step
 
@@ -62,11 +65,12 @@ class World(object):
             for i in reversed(range(blur+1)):
                 if t - (i * step/(blur+1)) >= 0:
                     self.set_time(t - (i * step/(blur+1)))
-                    count += 1
                     if not frame:
                         frame = self.get_frame()
                     else:
                         frame = Image.blend(frame, self.get_frame(), 0.4)
 
+            if scale != 1:
+                frame = frame.resize((int(self.width*scale),int(self.height*scale)), Image.ANTIALIAS)
             frames.append(frame)
         return frames

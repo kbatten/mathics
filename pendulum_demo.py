@@ -58,10 +58,18 @@ def serve_gif(frames, duration, nq=0):
 
 
 if __name__ == '__main__':
-    x = 500
-    y = 6 * x / 5
+    supersample = 2
+    width = 200
+    font_size = 11
 
-    world = World(x, y, Viewport.WHITE)
+    step = 0.05
+    duration = 4
+    blur = 0
+
+    x = int(supersample*width)
+    y = (6 * x / 5)
+
+    world = World(x, y, Viewport.WHITE, ("/usr/share/fonts/truetype/freefont/FreeSansBold.ttf", supersample * font_size))
 
     viewport_different = Viewport(-4, 1.9, 8, -0.5, (0,200,0))
     viewport = Viewport(-3, 3, 3, -3, Viewport.BEIGE)
@@ -85,13 +93,9 @@ if __name__ == '__main__':
     viewport_different.add_visualization(seconds_pendulum.visualization_different)
     viewport_different.add_visualization(seconds2_pendulum.visualization_different)
 
-    step = 0.05
-    duration = 4
-    blur = 2
-
     timer_start = time.time()
     duration = step * math.ceil(duration/step)
-    frames = world.get_frames(0, duration, step, blur)
+    frames = world.get_frames(0, duration, step, blur, 1.0/supersample)
     timer_end = time.time()
     print "generated %i frames in %i seconds. %f fps" % (len(frames) * (blur+1) - blur, timer_end - timer_start, (len(frames)*blur)/duration)
 

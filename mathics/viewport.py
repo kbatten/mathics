@@ -1,5 +1,7 @@
 import math
 
+from PIL import ImageFont
+
 from machines.basic import Point
 
 class Viewport(object):
@@ -111,7 +113,14 @@ class Viewport(object):
             x = Viewport.transform_x(point.x, transform)
             y = Viewport.transform_y(point.y, transform)
 
-            draw.text((x, y), text, fill=self.get_color())
+            try:
+                if 'font' in transform:
+                    font = ImageFont.truetype(transform['font'][0], transform['font'][1])
+                else:
+                    font = None
+                draw.text((x, y), text, fill=self.get_color(), font=font)
+            except IOError:
+                draw.text((x, y), text, fill=self.get_color())
 
 
     def add_object(self, obj):
