@@ -72,7 +72,7 @@ try:
 except ImportError:
     cKDTree = None
 
-# getheader gives a 87a header and a color palette (two elements in a list).
+# getheader gives a 87a header ([0][0:2]) and a color palette ([0][3]) (two return values).
 # getdata()[0] gives the Image Descriptor up to (including) "LZW min code size".
 # getdatas()[1:] is the image data itself in chuncks of 256 bytes (well
 # technically the first byte says how many bytes follow, after which that
@@ -197,7 +197,7 @@ def _writeGifToFile(fp, images, durations, loops):
     # Obtain palette for all images and count each occurance
     palettes, occur = [], []
     for im in images: 
-        palettes.append( getheader(im)[1] )
+        palettes.append( getheader(im)[0][3] )
     for palette in palettes: 
         occur.append( palettes.count( palette ) )
     
