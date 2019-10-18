@@ -2,4 +2,4 @@ Python Packages
 ===============
 numpy
 scipy
-pillow=3.3.3
+pillow=6.2.0

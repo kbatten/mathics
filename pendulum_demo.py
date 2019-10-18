@@ -12,12 +12,15 @@ from mathics.world import World
 from mathics.viewport import Viewport
 from mathics.machines import Pendulum, Timer, Point, Vector
 
+def write_gif(gif, frames, duration, nq):
+    for i in range(len(frames)):
+        frames[i] = frames[i].convert('P', palette = Image.ADAPTIVE)
+    frames[0].save(gif, format="GIF", save_all=True, append_images=frames[1:], duration=duration/len(frames), loop=0)
+
 def serve_gif(frames, duration, nq=0):
-    from PIL import Image
-    from images2gif import writeGif
     gif = StringIO.StringIO()
     timer_start = time.time()
-    writeGif(gif, frames, duration/len(frames), nq=nq)
+    write_gif(gif, frames, duration, nq)
     with open('image.gif', 'wb') as f:
         gif.seek(0)
         f.write(gif.read())
