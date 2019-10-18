@@ -70,8 +70,11 @@ class Viewport(object):
         def draw(self, draw, transform):
             x = Viewport.transform_x(self.get_center().x, transform)
             y = Viewport.transform_y(self.get_center().y, transform)
-            radius_x = self.get_radius() * math.fabs(transform['scale_x'])
-            radius_y = self.get_radius() * math.fabs(transform['scale_y'])
+            radius = self.get_radius()
+            if not radius:
+                radius = 0.0
+            radius_x = radius * math.fabs(transform['scale_x'])
+            radius_y = radius * math.fabs(transform['scale_y'])
 
             box = (x - radius_x, y - radius_y, x + radius_x, y + radius_y)
             draw.ellipse(box, fill=self.get_color())
