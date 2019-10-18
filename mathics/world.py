@@ -9,7 +9,7 @@ class World(object):
         self.width = float(width) * float(supersample)
         self.height = float(height) * float(supersample)
         self.background = background
-        self.font = font
+        self.font = (font[0], int(font[1] * supersample))
         self.supersample = float(supersample)
         self.t = 0.0
 
