@@ -1,13 +1,16 @@
 from PIL import Image, ImageDraw
 
+from .viewport import Viewport
+
 class World(object):
-    def __init__(self, width, height, background, font=None):
+    def __init__(self, width, height, background=Viewport.BLACK, font=None, supersample=1):
         self.machines = []
         self.viewports = []
-        self.width = float(width)
-        self.height = float(height)
+        self.width = float(width) * float(supersample)
+        self.height = float(height) * float(supersample)
         self.background = background
         self.font = font
+        self.supersample = float(supersample)
         self.t = 0.0
 
     def __str__(self):
@@ -23,6 +26,12 @@ class World(object):
         self.machines.append(machine)
 
     def add_viewport(self, viewport, x1, y1, x2, y2):
+        x1 = x1 * self.supersample
+        y1 = y1 * self.supersample
+        x2 = x2 * self.supersample
+        y2 = y2 * self.supersample
+
+
         scale_x = (x2-x1) / (viewport.x2_internal-viewport.x1_internal)
         scale_y = (y1-y2) / (viewport.y1_internal-viewport.y2_internal)
         translate_x = x1
@@ -57,6 +66,7 @@ class World(object):
 
 
     def get_frames(self, ts, te, step, blur=0, scale=1):
+        scale = float(scale) / self.supersample
         frames = []
         for i in range(1 + int((te - ts) / step)):
             t = i * step
