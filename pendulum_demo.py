@@ -3,7 +3,9 @@
 import sys
 import math
 import time
-import StringIO
+import io
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from PIL import Image
 import scipy.constants
@@ -12,23 +14,24 @@ from mathics.world import World
 from mathics.viewport import Viewport
 from mathics.machines import Pendulum, Timer, Point, Vector
 
+
+
 def write_gif(gif, frames, duration, nq):
     for i in range(len(frames)):
         frames[i] = frames[i].convert('P', palette = Image.ADAPTIVE)
     frames[0].save(gif, format="GIF", save_all=True, append_images=frames[1:], duration=duration/len(frames), loop=0)
 
 def serve_gif(frames, duration, nq=0):
-    gif = StringIO.StringIO()
+    gif = io.BytesIO()
     timer_start = time.time()
     write_gif(gif, frames, duration, nq)
     with open('image.gif', 'wb') as f:
         gif.seek(0)
         f.write(gif.read())
     timer_end = time.time()
-    print "stored gif in %i seconds." % (timer_end - timer_start)
+    print("stored gif in %i seconds." % (timer_end - timer_start))
 
     # server image.gif
-    from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
 
     PORT_NUMBER = 8000
 
@@ -55,7 +58,7 @@ def serve_gif(frames, duration, nq=0):
         server.serve_forever()
 
     except KeyboardInterrupt:
-        print '^C received, shutting down the web server'
+        print('^C received, shutting down the web server')
         server.socket.close()
 
 
@@ -109,6 +112,6 @@ if __name__ == '__main__':
     duration = step * math.ceil(duration/step)
     frames = world.get_frames(0, duration, step, blur, 1.0/supersample)
     timer_end = time.time()
-    print "generated %i frames in %i seconds. %f fps" % (len(frames) * (blur+1) - blur, timer_end - timer_start, (len(frames)*(blur+1))/duration)
+    print("generated %i frames in %i seconds. %f fps" % (len(frames) * (blur+1) - blur, timer_end - timer_start, (len(frames)*(blur+1))/duration))
 
     serve_gif(frames, duration)

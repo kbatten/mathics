@@ -2,7 +2,7 @@ import math
 
 import scipy.constants
 
-from basic import Machine, Point, Vector
+from .basic import Machine, Point, Vector
 
 class Pendulum(Machine):
     def __init__(self, pivot, weight):

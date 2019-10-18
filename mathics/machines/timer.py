@@ -1,4 +1,4 @@
-from basic import Machine
+from .basic import Machine
 
 class Timer(Machine):
     def __init__(self, point):

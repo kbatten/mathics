@@ -2,7 +2,7 @@ import math
 
 from PIL import ImageFont
 
-from machines.basic import Point
+from .machines.basic import Point
 
 class Viewport(object):
     BLACK=(0, 0, 0)
